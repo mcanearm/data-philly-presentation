@@ -1,0 +1,169 @@
+Web-Scraping and Data Munging in R: An Ode to Hadley Wickham
+========================================================
+author: Matthew McAnear
+date: Feb. 19, 2015
+
+Intro
+===
+
+- Matthew McAnear
+- Data Scientist with Seer Interactive
+- Bucknell '13 / UPenn '14
+- Volunteer Work
+- I live in South Philly.
+
+***
+
+![me](baby.png)
+
+Surprise
+===
+I'm moving to Reno tomorrow.
+![reno](philly_reno.png)
+
+Packages in this talk
+===
+- `rvest`
+- `plyr`
+- `dplyr`
+- `magrittr`
+
+Web-Scraping
+===
+First, you need to create a list of URLs to scrape.
+
+```{r}
+base_url <- 'http://reno.craigslist.org/search/apa?s='
+page_index <- seq(0, 500, by=100)
+urls <- paste0(base_url, page_index)
+```
+
+This Gives You:
+===
+```{r}
+urls
+```
+
+Using Rvest
+===
+Check out the repository at [https://github.com/mcanear/shoppeR](https://github.com/mcanearm/shoppeR) for source code.
+```{r, eval=FALSE}
+library(shoppeR)
+
+fields <- c('time', '.hdrlnk', '.housing', 'small', '.price')
+reno.apartments <- lapply(urls, function(url) {
+  reno.data <- ScrapeCraigslist(url, '.row', fields)
+})
+
+reno <- do.call('rbind', reno.apartments)
+```
+
+
+What does this data look like?
+===
+```{r, echo=FALSE}
+library(shoppeR)
+data(reno)
+str(reno)
+```
+
+How do we clean all this data?
+============================================================================
+- **plyr**
+- **dplyr**
+- **magrittr**
+
+What are plyr and dplyr?
+========================================================
+
+- R Packages for data cleaning
+- Hadley Wickham (`ggplot2`, `rvest`, `stringr`...)
+- Focus is on easy syntax and readability
+
+plyr Naming Conventions
+===
+- `a`: array
+- `l`: list
+- `d`: dataframe
+- `m`: multiple inputs
+- `r`: repeat multiple times
+- `_`: nothing
+- First letter: input
+- Second letter: output
+
+Loading Some Example Data
+========================================================
+
+Same/similar data, but scraped yesterday.
+```{r}
+library(plyr)
+library(shoppeR)
+
+data(reno)
+```
+
+
+plyr Example (ddply)
+===
+**dd**ply - dataframe in, dataframe out!
+```{r}
+# Get a dataframe with just the values you want
+reno.df <- ddply(reno, .(), mutate, 
+                 price = as.integer(gsub('\\$', '', as.character(.price))),
+                 small = gsub('\\(|\\)', '', as.character(small)),
+                 housing = as.character(.housing),
+                 time = as.character(time),
+                 description = as.character(.hdrlnk))
+```
+
+ddply Output
+========================================================
+*Some Columns ommitted from the output.
+```{r, echo=FALSE}
+head(reno.df[, c(2, 5, 7)])
+```
+
+Another plyr Example (dlply)
+===
+
+**dl**ply - dataframe in, list out!
+```{r}
+mean.rents <- dlply(reno.df, ~time, summarize,
+                    mean.rent = round(mean(price, na.rm=TRUE), 0))
+mean.rents[1:2]
+```
+
+What is plyr best for?
+===
+- Lots of data simple data cleaning.
+- Complex data cleaning tasks are best handled outside plyr (in my opinion).
+
+*Ex.*
+
+```{r}
+reno.df$housing[1:5]
+```
+
+```{r, echo=FALSE}
+reno.df$housing <- do.call('rbind', lapply(strsplit(reno.df$housing, split = '-'), function(string) {
+  beds <- string[grep('br', string)]
+  beds <- sub('/| ', '', beds)
+}))
+
+head(reno.df$housing)
+```
+
+dplyr
+===
+- Data selection and querying workhorse
+- simple syntax
+- `magrittr` and `%>%`
+- Emphasis on readability and ease of use
+- Some C++ optimizations
+
+dplyr Examples
+===
+
+
+
+
