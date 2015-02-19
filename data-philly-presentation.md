@@ -62,10 +62,10 @@ urls
 
 Using Rvest
 ===
-Check out the repository at [https://github.com/mcanear/shoppeR](https://github.com/mcanearm/shoppeR) for source code.
+Check out the repository at [https://github.com/mcanear/craig-scrape](https://github.com/mcanearm/scraig-scrape) for source code.
 
 ```r
-library(shoppeR)
+library(CraigScrape)
 
 fields <- c('time', '.hdrlnk', '.housing', 'small', '.price')
 reno.apartments <- lapply(urls, function(url) {
@@ -134,18 +134,6 @@ plyr Naming Conventions
 - First letter: input
 - Second letter: output
 
-Loading Some Example Data
-========================================================
-
-Same/similar data, but scraped yesterday.
-
-```r
-library(plyr)
-library(shoppeR)
-
-data(reno)
-```
-
 
 plyr Example (ddply)
 ===
@@ -153,6 +141,7 @@ plyr Example (ddply)
 
 ```r
 # Get a dataframe with just the values you want
+library(plyr)
 reno.df <- ddply(reno, .(), mutate, 
                  price = as.integer(gsub('\\$', '', as.character(.price))),
                  small = gsub('\\(|\\)', '', as.character(small)),
@@ -275,7 +264,7 @@ mid_range[1:5, ]
 ```
 It works just like any other data frame.
 ===
-<img src="data-philly-presentation-figure/unnamed-chunk-15-1.png" title="plot of chunk unnamed-chunk-15" alt="plot of chunk unnamed-chunk-15" width="700px" height="700px" style="display: block; margin: auto;" />
+<img src="data-philly-presentation-figure/unnamed-chunk-14-1.png" title="plot of chunk unnamed-chunk-14" alt="plot of chunk unnamed-chunk-14" width="700px" height="700px" style="display: block; margin: auto;" />
 
 Thanks!
 ===

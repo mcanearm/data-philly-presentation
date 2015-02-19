@@ -51,9 +51,9 @@ urls
 
 Using Rvest
 ===
-Check out the repository at [https://github.com/mcanear/shoppeR](https://github.com/mcanearm/shoppeR) for source code.
+Check out the repository at [https://github.com/mcanear/craig-scrape](https://github.com/mcanearm/scraig-scrape) for source code.
 ```{r, eval=FALSE}
-library(shoppeR)
+library(CraigScrape)
 
 fields <- c('time', '.hdrlnk', '.housing', 'small', '.price')
 reno.apartments <- lapply(urls, function(url) {
@@ -89,8 +89,8 @@ ScrapeCraigslist <- function(url, row.selector, fields) {
 
 What does this data look like?
 ===
-```{r, echo=FALSE}
-library(shoppeR)
+```{r, echo=FALSE, eval=TRUE}
+library(CraigScrape)
 data(reno)
 str(reno)
 ```
@@ -119,23 +119,13 @@ plyr Naming Conventions
 - First letter: input
 - Second letter: output
 
-Loading Some Example Data
-========================================================
-
-Same/similar data, but scraped yesterday.
-```{r}
-library(plyr)
-library(shoppeR)
-
-data(reno)
-```
-
 
 plyr Example (ddply)
 ===
 **dd**ply - dataframe in, dataframe out!
 ```{r}
 # Get a dataframe with just the values you want
+library(plyr)
 reno.df <- ddply(reno, .(), mutate, 
                  price = as.integer(gsub('\\$', '', as.character(.price))),
                  small = gsub('\\(|\\)', '', as.character(small)),
