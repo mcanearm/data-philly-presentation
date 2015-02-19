@@ -1,4 +1,4 @@
-Web-Scraping and Data Munging in R: An Ode to Hadley Wickham
+Web-Scraping and Data Munging in R: Hadley Style
 ========================================================
 author: Matthew McAnear
 date: Feb. 19, 2015
@@ -23,10 +23,15 @@ I'm moving to Reno tomorrow.
 
 Packages in this talk
 ===
+
+
 - `rvest`
 - `plyr`
 - `dplyr`
 - `magrittr`
+
+![hadley](hadley-rice.png)
+
 
 Web-Scraping
 ===
@@ -70,6 +75,28 @@ reno.apartments <- lapply(urls, function(url) {
 reno <- do.call('rbind', reno.apartments)
 ```
 
+Wait - how did you scrape that?
+===
+
+
+```r
+ScrapeCraigslist <- function(url, row.selector, fields) {
+  raw.html <- rvest::html(url)
+  
+  # Return data by css selector on the page
+  overall.data <- pblapply(fields, function(field){
+    field.data <- raw.html %>%
+      html_nodes(row.selector) %>%
+      html_node(field) %>%
+      html_text()
+  })
+  
+  overall.data <- do.call('cbind.data.frame', overall.data)
+  names(overall.data) <- fields
+  
+  return(overall.data)
+}
+```
 
 What does this data look like?
 ===
@@ -99,8 +126,8 @@ What are plyr and dplyr?
 plyr Naming Conventions
 ===
 - `a`: array
-- `l`: list
-- `d`: dataframe
+- **`l`: list**
+- **`d`: dataframe**
 - `m`: multiple inputs
 - `r`: repeat multiple times
 - `_`: nothing
@@ -171,7 +198,7 @@ $`Feb 18`
 
 What is plyr best for?
 ===
-- Lots of data simple data cleaning.
+- Lots of simple data cleaning.
 - Complex data cleaning tasks are best handled outside plyr (in my opinion).
 
 *Ex.*
@@ -188,8 +215,71 @@ reno.df$housing[1:5]
 
 
 
+dplyr
+===
+- Data selection and querying workhorse
+- simple syntax
+- `magrittr` and `%>%`
+- Emphasis on readability and ease of use
+- Some C++ optimizations
+
+
+dplyr Examples
+===
+- Grab all the apartments under $1000.
+
+```r
+sub_1k <- filter(reno.df, price < 1000)
+head(sub_1k[, c('small', 'price')])
+```
 
 ```
-Error in `$<-.data.frame`(`*tmp*`, "housing", value = c(" 3br ", " 2br ",  : 
-  replacement has 530 rows, data has 600
+              small price
+1  950 Nutmeg Place   699
+2              Reno   700
+3              <NA>   950
+4              <NA>   850
+5              <NA>   748
+6              Reno   639
 ```
+
+Chaining Operations
+===
+- Using the `%>%`, one can pass objects from function to function
+- Allows for very readable code
+- Ex: get all apartments between $800 and $1200 in Reno, arranged in decreasing
+order by square footage per bedroom.
+
+
+```r
+mid_range <- reno.df %>% filter(price >= 800 & price <= 1200, grepl('Reno', small)==TRUE) %>%
+  mutate(br_sqft = round(footage2/beds, 2)) %>% 
+  arrange(desc(br_sqft)) %>% 
+  select(br_sqft, price)
+```
+
+Output
+===
+
+```r
+mid_range[1:5, ]
+```
+
+```
+  br_sqft price
+1     892   905
+2     828  1100
+3     800  1000
+4     796   899
+5     770  1195
+```
+It works just like any other data frame.
+===
+<img src="data-philly-presentation-figure/unnamed-chunk-15-1.png" title="plot of chunk unnamed-chunk-15" alt="plot of chunk unnamed-chunk-15" width="700px" height="700px" style="display: block; margin: auto;" />
+
+Thanks!
+===
+- E-mail: <mcanearm@gmail.com>
+- Github: <https://github.com/mcanearm>
+- Special Thanks to Hadley Wickham
+- Questions?

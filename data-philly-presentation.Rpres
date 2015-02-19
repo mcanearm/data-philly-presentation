@@ -1,4 +1,4 @@
-Web-Scraping and Data Munging in R: An Ode to Hadley Wickham
+Web-Scraping and Data Munging in R: Hadley Style
 ========================================================
 author: Matthew McAnear
 date: Feb. 19, 2015
@@ -23,10 +23,15 @@ I'm moving to Reno tomorrow.
 
 Packages in this talk
 ===
+
+
 - `rvest`
 - `plyr`
 - `dplyr`
 - `magrittr`
+
+![hadley](hadley-rice.png)
+
 
 Web-Scraping
 ===
@@ -58,6 +63,29 @@ reno.apartments <- lapply(urls, function(url) {
 reno <- do.call('rbind', reno.apartments)
 ```
 
+Wait - how did you scrape that?
+===
+
+```{r, eval=FALSE}
+
+ScrapeCraigslist <- function(url, row.selector, fields) {
+  raw.html <- rvest::html(url)
+  
+  # Return data by css selector on the page
+  overall.data <- pblapply(fields, function(field){
+    field.data <- raw.html %>%
+      html_nodes(row.selector) %>%
+      html_node(field) %>%
+      html_text()
+  })
+  
+  overall.data <- do.call('cbind.data.frame', overall.data)
+  names(overall.data) <- fields
+  
+  return(overall.data)
+}
+
+```
 
 What does this data look like?
 ===
@@ -83,8 +111,8 @@ What are plyr and dplyr?
 plyr Naming Conventions
 ===
 - `a`: array
-- `l`: list
-- `d`: dataframe
+- **`l`: list**
+- **`d`: dataframe**
 - `m`: multiple inputs
 - `r`: repeat multiple times
 - `_`: nothing
@@ -135,7 +163,7 @@ mean.rents[1:2]
 
 What is plyr best for?
 ===
-- Lots of data simple data cleaning.
+- Lots of simple data cleaning.
 - Complex data cleaning tasks are best handled outside plyr (in my opinion).
 
 *Ex.*
@@ -145,12 +173,25 @@ reno.df$housing[1:5]
 ```
 
 ```{r, echo=FALSE}
-reno.df$housing <- do.call('rbind', lapply(strsplit(reno.df$housing, split = '-'), function(string) {
-  beds <- string[grep('br', string)]
-  beds <- sub('/| ', '', beds)
+reno.df$beds <- unlist(lapply(strsplit(reno.df$housing, split = '-'), function(string) {
+  beds <- grepl('br', string)
+  if (TRUE %in% beds) {
+    beds <- gsub('/| |br', '', string[grep('br', string)][1])
+    beds <- as.integer(beds)
+  } else {
+    beds <- NA
+  }
 }))
 
-head(reno.df$housing)
+reno.df$footage2 <- unlist(lapply(strsplit(reno.df$housing, split = '-'), function(string) {
+  footage <- grepl('ft2', string)
+  if (TRUE %in% footage) {
+    footage <- gsub('/| |ft2', '', string[grep('ft2', string)][1])
+    footage <- as.integer(footage)
+  } else {
+    footage <- NA
+  }
+}))
 ```
 
 dplyr
@@ -161,9 +202,44 @@ dplyr
 - Emphasis on readability and ease of use
 - Some C++ optimizations
 
+
 dplyr Examples
 ===
+- Grab all the apartments under $1000.
+```{r}
+sub_1k <- filter(reno.df, price < 1000)
+head(sub_1k[, c('small', 'price')])
+```
 
+Chaining Operations
+===
+- Using the `%>%`, one can pass objects from function to function
+- Allows for very readable code
+- Ex: get all apartments between $800 and $1200 in Reno, arranged in decreasing
+order by square footage per bedroom.
 
+```{r}
+mid_range <- reno.df %>% filter(price >= 800 & price <= 1200, grepl('Reno', small)==TRUE) %>%
+  mutate(br_sqft = round(footage2/beds, 2)) %>% 
+  arrange(desc(br_sqft)) %>% 
+  select(br_sqft, price)
+```
 
+Output
+===
+```{r}
+mid_range[1:5, ]
+```
+It works just like any other data frame.
+===
+```{r, fig=TRUE, out.width='700px', out.height='700px', echo=FALSE, fig.align='center', results='hide'}
+fit <- lm(price ~ br_sqft, data=mid_range)
+plot(mid_range$br_sqft, mid_range$price) + abline(fit, col='red')
+```
 
+Thanks!
+===
+- E-mail: <mcanearm@gmail.com>
+- Github: <https://github.com/mcanearm>
+- Special Thanks to Hadley Wickham
+- Questions?
